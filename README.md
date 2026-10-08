@@ -1,7 +1,7 @@
 # diff
 
 Find the differences between two sequences or texts, for
-[Meadow](https://github.com/mcdearman/meadow). It offers Myers, patience and
+[Meadow](https://github.com/meadow-lang/meadow). It offers Myers, patience and
 LCS diffs, unified diffs like `diff -u` and `git diff` print, and inline
 (word-level) changes.
 
@@ -12,7 +12,7 @@ operations, groups them into the same hunks and prints the same text.
 ## Install
 
 ```sh
-meadow add mcdearman/Diff
+meadow add meadow-lang/Diff
 ```
 
 ## Use

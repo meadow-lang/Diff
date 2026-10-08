@@ -5,7 +5,7 @@ version = 1
 
 [[package]]
 name = "UnicodeSegmentation"
-source = "git+https://github.com/mcdearman/UnicodeSegmentation?version=0.2.0"
+source = "git+https://github.com/meadow-lang/UnicodeSegmentation?version=0.2.0"
 version = "0.2.1"
 rev = "33498ab064451b59be3a455dcb2ec865fe71290a"
 tree = "fcaabaabf36251e88ba26c1c0f731246fce1a193"

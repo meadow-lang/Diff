@@ -8,8 +8,7 @@ use Std.Collections.Vector as V
 
 -- How to find the differences.
 @pub data Algorithm
-  = -- Myers' O(ND) algorithm: the shortest edit script.
-  Myers
+  = Myers -- Myers' O(ND) algorithm: the shortest edit script.
   -- Patience diff: lines that occur once on each side anchor the rest, which
   -- tends to line up blocks of code the way a person would.
   | Patience
@@ -32,8 +31,7 @@ use Std.Collections.Vector as V
 
 -- One step of a diff, in the crate's terms.
 @pub data DiffOp
-  = -- `Equal oldIndex newIndex len`: `len` elements the same on both sides.
-  Equal Int Int Int
+  = Equal Int Int Int -- `Equal oldIndex newIndex len`: `len` elements the same on both sides.
   -- `Delete oldIndex oldLen newIndex`: `oldLen` elements gone from the old side.
   | Delete Int Int Int
   -- `Insert oldIndex newIndex newLen`: `newLen` elements new on the new side.

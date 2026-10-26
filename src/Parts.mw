@@ -11,9 +11,7 @@ use Diff.Text
 
 -- The runs of `source` the tokens `from` to `to` cover.
 fun remap (source : String) starts from to =
-  if from >= to
-  then ""
-  else stringSlice source (arrayGet starts from) (arrayGet starts to)
+  if from >= to then "" else stringSlice source (arrayGet starts from) (arrayGet starts to)
 
 fun startsOf (tokens : #[String]) =
   let next = \acc t -> V.pushBack acc (V.getOr 0 acc (V.len acc - 1) + stringByteLength t) in
@@ -31,7 +29,10 @@ fun parts (d : TextDiff) old new =
       | DiffOp.Delete o l _ -> [(ChangeTag.Delete, remap old os o (o + l))]
       | DiffOp.Insert _ n l -> [(ChangeTag.Insert, remap new ns n (n + l))]
       | DiffOp.Replace o ol n nl ->
-          [(ChangeTag.Delete, remap old os o (o + ol)), (ChangeTag.Insert, remap new ns n (n + nl))])
+          [
+            (ChangeTag.Delete, remap old os o (o + ol)),
+            (ChangeTag.Insert, remap new ns n (n + nl))
+          ])
     d.ops
 
 -- `old` and `new` diffed by `alg`, as tagged runs of elements.
@@ -39,17 +40,20 @@ fun parts (d : TextDiff) old new =
   V.concatMap (\op -> slicesOf op old new) (captureDiffSlices alg old new)
 
 -- Tagged runs of characters.
-@pub fun diffCharParts alg old new = parts (diffChars { textDiffConfig | algorithm = alg } old new) old new
+@pub fun diffCharParts alg old new =
+  parts (diffChars { textDiffConfig | algorithm = alg } old new) old new
 
 -- Tagged runs of words and whitespace.
-@pub fun diffWordParts alg old new = parts (diffWords { textDiffConfig | algorithm = alg } old new) old new
+@pub fun diffWordParts alg old new =
+  parts (diffWords { textDiffConfig | algorithm = alg } old new) old new
 
 -- Tagged runs of UAX #29 word bounds.
 @pub fun diffUnicodeWordParts alg old new =
   parts (diffUnicodeWords { textDiffConfig | algorithm = alg } old new) old new
 
 -- Tagged runs of graphemes.
-@pub fun diffGraphemeParts alg old new = parts (diffGraphemes { textDiffConfig | algorithm = alg } old new) old new
+@pub fun diffGraphemeParts alg old new =
+  parts (diffGraphemes { textDiffConfig | algorithm = alg } old new) old new
 
 -- Tagged lines.
 @pub fun diffLineParts alg old new =

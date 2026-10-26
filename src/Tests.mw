@@ -32,8 +32,9 @@ use Diff.Parts
 
 @cfg(test)
 fun num src i n =
-  let rec go k acc = if k >= n then acc else go (k + 1) (acc * 64 + (toInt (stringByteAt src (i + k)) - 48)) in
-  (go 0 0, i + n)
+  let rec go k acc =
+    if k >= n then acc else go (k + 1) (acc * 64 + (toInt (stringByteAt src (i + k)) - 48))
+  in (go 0 0, i + n)
 
 @cfg(test)
 fun str src i =
@@ -45,25 +46,21 @@ fun str src i =
 fun strs src i =
   let count = num src i 3 in
   let rec go k at acc =
-    if k >= fst count
-    then (acc, at)
+    if k >= fst count then (acc, at)
     else
       match str src at with
       | (s, next) -> go (k + 1) next (V.pushBack acc s)
-  in
-  go 0 (snd count) V.empty
+  in go 0 (snd count) V.empty
 
 -- A non-negative decimal number, or 0.
 @cfg(test)
 fun decimal s =
   let rec go i acc =
-    if i >= stringByteLength s
-    then acc
+    if i >= stringByteLength s then acc
     else
       let c = toInt (stringByteAt s i) in
       if c >= 48 and c <= 57 then go (i + 1) (acc * 10 + c - 48) else acc
-  in
-  go 0 0
+  in go 0 0
 
 @cfg(test)
 def algorithms = [Algorithm.Myers, Algorithm.Patience, Algorithm.Lcs]
@@ -92,10 +89,7 @@ fun tagChar t =
   | ChangeTag.Insert -> "+"
 
 @cfg(test)
-fun indexText m =
-  match m with
-  | Just i -> "${i}"
-  | None -> "_"
+fun indexText m = match m with | Just i -> "${i}" | None -> "_"
 
 @cfg(test)
 fun boolText b = if b then "true" else "false"
@@ -104,16 +98,14 @@ fun boolText b = if b then "true" else "false"
 fun ratioText (r : Float32) = floor (toFloat64 r *. 4294967296.0)
 
 @cfg(test)
-fun digitsText (xs : #[Int]) = charsToString (V.toArray (V.map (\d -> charFromCode (48 + d)) (V.fromArray xs)))
+fun digitsText (xs : #[Int]) =
+  charsToString (V.toArray (V.map (\d -> charFromCode (48 + d)) (V.fromArray xs)))
 
 @cfg(test)
 fun partsText parts = V.map (\p -> match p with | (t, s) -> tagChar t ++ s) parts
 
 @cfg(test)
-fun orElse d m =
-  match m with
-  | Just x -> x
-  | None -> d
+fun orElse d m = match m with | Just x -> x | None -> d
 
 -- --- the cases ----------------------------------------------------------------------------
 
@@ -137,8 +129,12 @@ fun sequenceCase i =
   let groups = V.map (\g -> "group: " ++ opsText g) (groupDiffOps ops (fst n)) in
   let whole = fst oa == 0 and fst ob == arrayLen old and fst na == 0 and fst nb == arrayLen new in
   let slices =
-    if whole
-    then V.map (\p -> match p with | (t, xs) -> "slice ${tagChar t} ${digitsText xs}") (diffSliceParts a old new)
+    if whole then
+      V.map
+        (\p ->
+          match p with
+          | (t, xs) -> "slice ${tagChar t} ${digitsText xs}")
+        (diffSliceParts a old new)
     else []
   in
   let got = V.append (V.append (V.map opText ops) groups) slices in
@@ -151,14 +147,10 @@ fun configOf alg nl =
 
 @cfg(test)
 fun tokenized kind config old new =
-  if kind == 0
-  then diffLines config old new
-  else if kind == 1
-  then diffWords config old new
-  else if kind == 2
-  then diffChars config old new
-  else if kind == 3
-  then diffUnicodeWords config old new
+  if kind == 0 then diffLines config old new
+  else if kind == 1 then diffWords config old new
+  else if kind == 2 then diffChars config old new
+  else if kind == 3 then diffUnicodeWords config old new
   else diffGraphemes config old new
 
 @cfg(test)
@@ -167,7 +159,11 @@ fun inlineText inline (d : TextDiff) =
     (\op ->
       V.map
         (\(c : InlineChange) ->
-          let values = S.join "|" (V.map (\p -> match p with | (e, s) -> (if e then "*" else ".") ++ s) c.values) in
+          let values =
+            S.join
+              "|"
+              (V.map (\p -> match p with | (e, s) -> (if e then "*" else ".") ++ s) c.values)
+          in
           let place = "${tagChar c.tag} ${indexText c.oldIndex} ${indexText c.newIndex}" in
           "inline ${place} [${values}] ${inlineChangeText c}")
         (inline d op))
@@ -186,10 +182,13 @@ fun textCase i =
   let d = tokenized (fst kind) (configOf (fst alg) (fst nl)) (fst old) (fst new) in
   let terminated = boolText d.newlineTerminated in
   let slices = "${arrayLen d.old} ${arrayLen d.new}" in
-  let head = "ops ${opsText d.ops} ratio ${ratioText (ratio d)} slices ${slices} nl ${terminated}" in
+  let head =
+    "ops ${opsText d.ops} ratio ${ratioText (ratio d)} slices ${slices} nl ${terminated}"
+  in
   let changes =
     V.map
-      (\(c : Change String) -> "${tagChar c.tag} ${indexText c.oldIndex} ${indexText c.newIndex} ${c.value}")
+      (\(c : Change String) ->
+        "${tagChar c.tag} ${indexText c.oldIndex} ${indexText c.newIndex} ${c.value}")
       (iterAllChanges d)
   in
   -- The context sizes were the generator's to pick: read them back.
@@ -233,17 +232,12 @@ fun partsCase kind i =
   let a = algorithmAt (fst alg) in
   let h = fst helper in
   let parts =
-    if kind == 3 and h == 0
-    then diffCharParts a (fst old) (fst new)
-    else if kind == 3 and h == 1
-    then diffWordParts a (fst old) (fst new)
-    else if kind == 3
-    then diffLineParts a (fst old) (fst new)
-    else if h == 0
-    then diffUnicodeWordParts a (fst old) (fst new)
+    if kind == 3 and h == 0 then diffCharParts a (fst old) (fst new)
+    else if kind == 3 and h == 1 then diffWordParts a (fst old) (fst new)
+    else if kind == 3 then diffLineParts a (fst old) (fst new)
+    else if h == 0 then diffUnicodeWordParts a (fst old) (fst new)
     else diffGraphemeParts a (fst old) (fst new)
-  in
-  ("${fst old} => ${fst new}", fst expected, partsText parts, snd expected)
+  in ("${fst old} => ${fst new}", fst expected, partsText parts, snd expected)
 
 -- Kind 5: inline changes by plain words.
 @cfg(test)
@@ -260,14 +254,10 @@ fun plainCase i =
 @cfg(test)
 fun runCase src i =
   let kind = fst (num src i 1) in
-  if kind == 0
-  then sequenceCase (i + 1)
-  else if kind == 1
-  then textCase (i + 1)
-  else if kind == 2
-  then closeMatchCase (i + 1)
-  else if kind == 5
-  then plainCase (i + 1)
+  if kind == 0 then sequenceCase (i + 1)
+  else if kind == 1 then textCase (i + 1)
+  else if kind == 2 then closeMatchCase (i + 1)
+  else if kind == 5 then plainCase (i + 1)
   else partsCase kind (i + 1)
 
 -- The first line where `want` and `got` differ.
@@ -280,12 +270,14 @@ fun firstDifference want got =
 
 @cfg(test)
 fun check src i bad =
-  if i >= stringByteLength src
-  then bad
+  if i >= stringByteLength src then bad
   else
     match runCase src i with
     | (input, want, got, next) ->
-        check src next (if want == got then bad else V.pushBack bad (input, firstDifference want got))
+        check
+          src
+          next
+          (if want == got then bad else V.pushBack bad (input, firstDifference want got))
 
 -- Failures list (input, (expected, actual)).
 @cfg(test)
@@ -294,7 +286,10 @@ fun check src i bad =
 
 @cfg(test)
 @test fun plainWordsMatchTheCrate () =
-  assertEq (V.take (check casesPlain 0 V.empty) 3) [] "inline changes where the port and similar differ"
+  assertEq
+    (V.take (check casesPlain 0 V.empty) 3)
+    []
+    "inline changes where the port and similar differ"
 
 @cfg(test)
 @test fun examples () =
@@ -304,4 +299,7 @@ fun check src i bad =
   let b = assertEq ops [DiffOp.Equal 0 0 1, DiffOp.Delete 1 1 1, DiffOp.Equal 2 1 1] "ops" in
   let close = getCloseMatches "appel" ["ape", "apple", "peach", "puppy"] 3 (toFloat32 0.6) in
   let c = assertEq close ["apple", "ape"] "close" in
-  assertEq (partsText (diffWordParts Algorithm.Myers "one two" "one three")) ["=one ", "-two", "+three"] "word parts"
+  assertEq
+    (partsText (diffWordParts Algorithm.Myers "one two" "one three"))
+    ["=one ", "-two", "+three"]
+    "word parts"

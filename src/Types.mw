@@ -7,8 +7,8 @@
 use Std.Collections.Vector as V
 
 -- How to find the differences.
-@pub data Algorithm =
-  -- Myers' O(ND) algorithm: the shortest edit script.
+@pub data Algorithm
+  = -- Myers' O(ND) algorithm: the shortest edit script.
   Myers
   -- Patience diff: lines that occur once on each side anchor the rest, which
   -- tends to line up blocks of code the way a person would.
@@ -31,8 +31,8 @@ use Std.Collections.Vector as V
 @pub data DiffTag = Equal | Delete | Insert | Replace
 
 -- One step of a diff, in the crate's terms.
-@pub data DiffOp =
-  -- `Equal oldIndex newIndex len`: `len` elements the same on both sides.
+@pub data DiffOp
+  = -- `Equal oldIndex newIndex len`: `len` elements the same on both sides.
   Equal Int Int Int
   -- `Delete oldIndex oldLen newIndex`: `oldLen` elements gone from the old side.
   | Delete Int Int Int
@@ -49,19 +49,13 @@ use Std.Collections.Vector as V
   | DiffOp.Insert o n nl -> (DiffTag.Insert, (o, o), (n, n + nl))
   | DiffOp.Replace o ol n nl -> (DiffTag.Replace, (o, o + ol), (n, n + nl))
 
-@pub fun opTag op =
-  match asTagTuple op with
-  | (t, _, _) -> t
+@pub fun opTag op = match asTagTuple op with | (t, _, _) -> t
 
 -- The old elements the operation covers, as `(start, end)`.
-@pub fun oldRange op =
-  match asTagTuple op with
-  | (_, r, _) -> r
+@pub fun oldRange op = match asTagTuple op with | (_, r, _) -> r
 
 -- The new elements the operation covers, as `(start, end)`.
-@pub fun newRange op =
-  match asTagTuple op with
-  | (_, _, r) -> r
+@pub fun newRange op = match asTagTuple op with | (_, _, r) -> r
 
 @pub(pkg) fun isEmptyOp op =
   match asTagTuple op with
@@ -89,26 +83,37 @@ fun adjust op offset len =
 
 -- One element's part in a diff: its tag, where it is on each side, and the
 -- element.
-@pub record Change a = { tag : ChangeTag, oldIndex : Maybe Int, newIndex : Maybe Int, value : a }
+@pub record Change a = {
+  tag : ChangeTag,
+  oldIndex : Maybe Int,
+  newIndex : Maybe Int,
+  value : a
+}
 
 -- The changes an operation stands for, element by element: the crate's
 -- `iter_changes`.
 @pub fun changesOf op (old : #[a]) (new : #[a]) =
-  let change = \tag oi ni value -> Change { tag = tag, oldIndex = oi, newIndex = ni, value = value } in
-  let equal = \o n l ->
-    V.map (\k -> change ChangeTag.Equal (Just (o + k)) (Just (n + k)) (arrayGet old (o + k))) (V.range 0 l)
+  let change =
+    \tag oi ni value -> Change { tag = tag, oldIndex = oi, newIndex = ni, value = value }
   in
-  let deleted = \o l ->
-    V.map (\k -> change ChangeTag.Delete (Just (o + k)) None (arrayGet old (o + k))) (V.range 0 l)
+  let equal =
+    \o n l ->
+      V.map
+        (\k -> change ChangeTag.Equal (Just (o + k)) (Just (n + k)) (arrayGet old (o + k)))
+        (V.range 0 l)
   in
-  let inserted = \n l ->
-    V.map (\k -> change ChangeTag.Insert None (Just (n + k)) (arrayGet new (n + k))) (V.range 0 l)
+  let deleted =
+    \o l ->
+      V.map (\k -> change ChangeTag.Delete (Just (o + k)) None (arrayGet old (o + k))) (V.range 0 l)
   in
-  match op with
-  | DiffOp.Equal o n l -> equal o n l
-  | DiffOp.Delete o l _ -> deleted o l
-  | DiffOp.Insert _ n l -> inserted n l
-  | DiffOp.Replace o ol n nl -> V.append (deleted o ol) (inserted n nl)
+  let inserted =
+    \n l ->
+      V.map (\k -> change ChangeTag.Insert None (Just (n + k)) (arrayGet new (n + k))) (V.range 0 l)
+  in match op with
+     | DiffOp.Equal o n l -> equal o n l
+     | DiffOp.Delete o l _ -> deleted o l
+     | DiffOp.Insert _ n l -> inserted n l
+     | DiffOp.Replace o ol n nl -> V.append (deleted o ol) (inserted n nl)
 
 -- The runs of elements an operation stands for: the crate's `iter_slices`.
 @pub fun slicesOf op (old : #[a]) (new : #[a]) =
@@ -117,4 +122,5 @@ fun adjust op offset len =
   | DiffOp.Equal o _ l -> [(ChangeTag.Equal, part old o l)]
   | DiffOp.Delete o l _ -> [(ChangeTag.Delete, part old o l)]
   | DiffOp.Insert _ n l -> [(ChangeTag.Insert, part new n l)]
-  | DiffOp.Replace o ol n nl -> [(ChangeTag.Delete, part old o ol), (ChangeTag.Insert, part new n nl)]
+  | DiffOp.Replace o ol n nl ->
+      [(ChangeTag.Delete, part old o ol), (ChangeTag.Insert, part new n nl)]

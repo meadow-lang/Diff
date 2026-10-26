@@ -38,24 +38,22 @@ fun hunkRange start stop =
   "@@ -${old} +${new} @@"
 
 -- The operations of each hunk.
-@pub fun hunks (u : UnifiedDiff) = V.filter (\ops -> not (V.isEmpty ops)) (groupedOps u.diff u.contextRadius)
+@pub fun hunks (u : UnifiedDiff) =
+  V.filter (\ops -> not (V.isEmpty ops)) (groupedOps u.diff u.contextRadius)
 
 -- One hunk as text.
 @pub fun hunkText (u : UnifiedDiff) ops =
   let d = u.diff in
   let changes = V.concatMap (\op -> changesOf op d.old d.new) ops in
   let hint = if u.missingNewlineHint then "\n\\ No newline at end of file" else "" in
-  let lineOf = \(c : Change String) ->
-    let body = tagSymbol c.tag ++ c.value in
-    if not d.newlineTerminated
-    then body ++ "\n"
-    else if endsWithNewline c.value
-    then body
-    else body ++ hint ++ "\n"
-  in
-  if V.isEmpty changes
-  then ""
-  else concatStrings (V.toArray (V.pushFront (V.map lineOf changes) (hunkHeader ops ++ "\n")))
+  let lineOf =
+    \(c : Change String) ->
+      let body = tagSymbol c.tag ++ c.value in
+      if not d.newlineTerminated then body ++ "\n"
+      else if endsWithNewline c.value then body
+      else body ++ hint ++ "\n"
+  in if V.isEmpty changes then ""
+     else concatStrings (V.toArray (V.pushFront (V.map lineOf changes) (hunkHeader ops ++ "\n")))
 
 -- The whole unified diff as text: the header, if there is one and anything
 -- changed, and every hunk.
@@ -65,8 +63,7 @@ fun hunkRange start stop =
     match u.header with
     | Just (a, b) -> if V.isEmpty parts then "" else "--- ${a}\n+++ ${b}\n"
     | None -> ""
-  in
-  head ++ concatStrings (V.toArray parts)
+  in head ++ concatStrings (V.toArray parts)
 
 -- `old` and `new` diffed by lines with `alg`, as a unified diff with `n` lines
 -- of context and, if given, a header naming the two files.

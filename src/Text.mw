@@ -40,40 +40,37 @@ fun isNewline c = charCode c == 13 or charCode c == 10
 fun indexed s =
   let cs = stringToChars s in
   let rec go i at acc =
-    if i >= arrayLen cs then acc else go (i + 1) (at + utf8Len (arrayGet cs i)) (V.pushBack acc (at, arrayGet cs i))
-  in
-  V.toArray (go 0 0 V.empty)
+    if i >= arrayLen cs then acc
+    else go (i + 1) (at + utf8Len (arrayGet cs i)) (V.pushBack acc (at, arrayGet cs i))
+  in V.toArray (go 0 0 V.empty)
 
 -- `s` cut into maximal runs of characters that `kind` puts in the same class.
 fun runsBy kind s =
   let cs = indexed s in
   let n = arrayLen cs in
   let rec go i start out =
-    if i >= n
-    then (if start < n then V.pushBack out (stringSlice s (fst (arrayGet cs start)) (stringByteLength s)) else out)
-    else if i > start and kind (snd (arrayGet cs i)) != kind (snd (arrayGet cs start))
-    then go (i + 1) i (V.pushBack out (stringSlice s (fst (arrayGet cs start)) (fst (arrayGet cs i))))
+    if i >= n then
+      (if start < n then
+         V.pushBack out (stringSlice s (fst (arrayGet cs start)) (stringByteLength s))
+       else out)
+    else if i > start and kind (snd (arrayGet cs i)) != kind (snd (arrayGet cs start)) then
+      go (i + 1) i (V.pushBack out (stringSlice s (fst (arrayGet cs start)) (fst (arrayGet cs i))))
     else go (i + 1) start out
-  in
-  go 0 0 V.empty
+  in go 0 0 V.empty
 
 -- Lines, each with its line ending: `\n`, `\r\n` or a lone `\r`.
 @pub fun tokenizeLines s =
   let n = stringByteLength s in
   let byte = \i -> toInt (stringByteAt s i) in
   let rec go i last out =
-    if i >= n
-    then (if last < n then V.pushBack out (stringSlice s last n) else out)
-    else if byte i == 13
-    then
-      if i + 1 < n and byte (i + 1) == 10
-      then go (i + 2) (i + 2) (V.pushBack out (stringSlice s last (i + 2)))
+    if i >= n then (if last < n then V.pushBack out (stringSlice s last n) else out)
+    else if byte i == 13 then
+      if i + 1 < n and byte (i + 1) == 10 then
+        go (i + 2) (i + 2) (V.pushBack out (stringSlice s last (i + 2)))
       else go (i + 1) (i + 1) (V.pushBack out (stringSlice s last (i + 1)))
-    else if byte i == 10
-    then go (i + 1) (i + 1) (V.pushBack out (stringSlice s last (i + 1)))
+    else if byte i == 10 then go (i + 1) (i + 1) (V.pushBack out (stringSlice s last (i + 1)))
     else go (i + 1) last out
-  in
-  go 0 0 V.empty
+  in go 0 0 V.empty
 
 -- Runs of line-ending characters, and runs of anything else.
 @pub fun tokenizeLinesAndNewlines s = runsBy isNewline s
@@ -119,30 +116,45 @@ fun runsBy kind s =
 -- that the algorithms compare numbers. The crate does this only for long
 -- texts; the answers are the same either way.
 fun identify (old : #[String]) (new : #[String]) =
-  let assign = \acc tok ->
-    match acc with
-    | (m, ids) ->
-        match H.lookup tok m with
-        | Just id -> (m, V.pushBack ids id)
-        | None -> (H.insert tok (H.size m) m, V.pushBack ids (H.size m))
-  in
-  match V.foldl assign (H.empty, V.empty) (V.fromArray old) with
-  | (m, oldIds) ->
-      match V.foldl assign (m, V.empty) (V.fromArray new) with
-      | (_, newIds) -> (V.toArray oldIds, V.toArray newIds)
+  let assign =
+    \acc tok ->
+      match acc with
+      | (m, ids) ->
+          match H.lookup tok m with
+          | Just id -> (m, V.pushBack ids id)
+          | None -> (H.insert tok (H.size m) m, V.pushBack ids (H.size m))
+  in match V.foldl assign (H.empty, V.empty) (V.fromArray old) with
+     | (m, oldIds) ->
+         match V.foldl assign (m, V.empty) (V.fromArray new) with
+         | (_, newIds) -> (V.toArray oldIds, V.toArray newIds)
 
 fun diffTokens (config : TextDiffConfig) (old : #[String]) (new : #[String]) newlineTerminated =
   match identify old new with
   | (oldIds, newIds) ->
       let same = \i j -> arrayGet oldIds i == arrayGet newIds j in
       let key = \ids i -> arrayGet ids i in
-      let ops = captureWith config.algorithm same (key oldIds) (key newIds) 0 (arrayLen old) 0 (arrayLen new) in
+      let ops =
+        captureWith
+          config.algorithm
+          same
+          (key oldIds)
+          (key newIds)
+          0
+          (arrayLen old)
+          0
+          (arrayLen new)
+      in
       let terminated =
         match config.newlineTerminated with
         | Just b -> b
         | None -> newlineTerminated
-      in
-      TextDiff { old = old, new = new, ops = ops, newlineTerminated = terminated, algorithm = config.algorithm }
+      in TextDiff {
+           old = old,
+           new = new,
+           ops = ops,
+           newlineTerminated = terminated,
+           algorithm = config.algorithm
+         }
 
 fun diffBy tokenize terminated config old new =
   diffTokens config (V.toArray (tokenize old)) (V.toArray (tokenize new)) terminated
@@ -193,29 +205,29 @@ fun diffBy tokenize terminated config old new =
 
 fun upperSeqRatio len1 len2 =
   let n = len1 + len2 in
-  if n == 0
-  then toFloat32 1.0
-  else toFloat32 2.0 *. toFloat32 (toFloat (if len1 < len2 then len1 else len2)) /. toFloat32 (toFloat n)
+  if n == 0 then toFloat32 1.0
+  else
+    toFloat32 2.0
+      *. toFloat32 (toFloat (if len1 < len2 then len1 else len2))
+      /. toFloat32 (toFloat n)
 
 -- The crate's `QuickSeqRatio`: note that it counts `seq1`'s distinct tokens,
 -- not all of them.
 fun quickRatio counts (seq : #[String]) =
   let n = H.size counts + arrayLen seq in
-  if n == 0
-  then toFloat32 1.0
+  if n == 0 then toFloat32 1.0
   else
-    let step = \acc word ->
-      match acc with
-      | (available, matches) ->
-          let x =
-            match H.lookup word available with
-            | Just c -> c
-            | None -> H.getOr 0 word counts
-          in
-          (H.insert word (x - 1) available, if x > 0 then matches + 1 else matches)
-    in
-    match V.foldl step (H.empty, 0) (V.fromArray seq) with
-    | (_, matches) -> toFloat32 2.0 *. toFloat32 (toFloat matches) /. toFloat32 (toFloat n)
+    let step =
+      \acc word ->
+        match acc with
+        | (available, matches) ->
+            let x =
+              match H.lookup word available with
+              | Just c -> c
+              | None -> H.getOr 0 word counts
+            in (H.insert word (x - 1) available, if x > 0 then matches + 1 else matches)
+    in match V.foldl step (H.empty, 0) (V.fromArray seq) with
+       | (_, matches) -> toFloat32 2.0 *. toFloat32 (toFloat matches) /. toFloat32 (toFloat n)
 
 -- `f`'s value as the crate turns a ratio into a `u32`: times 2^32 in single
 -- precision, then cut to 32 bits.
@@ -228,13 +240,15 @@ fun score (f : Float32) =
 -- `cutoff` alike.
 @pub fun getCloseMatches word possibilities n (cutoff : Float32) =
   let seq1 = V.toArray (tokenizeChars word) in
-  let counts = V.foldl (\m w -> H.insertWith (\new old -> old + 1) w 1 m) H.empty (V.fromArray seq1) in
+  let counts =
+    V.foldl (\m w -> H.insertWith (\new old -> old + 1) w 1 m) H.empty (V.fromArray seq1)
+  in
   let scored =
     V.foldl
       (\acc possibility ->
         let seq2 = V.toArray (tokenizeChars possibility) in
-        if upperSeqRatio (arrayLen seq1) (arrayLen seq2) <. cutoff or quickRatio counts seq2 <. cutoff
-        then acc
+        if upperSeqRatio (arrayLen seq1) (arrayLen seq2) <. cutoff
+          or quickRatio counts seq2 <. cutoff then acc
         else
           let r = ratio (fromSlices seq1 seq2) in
           if r >=. cutoff then V.pushBack acc (score r, possibility) else acc)
@@ -250,5 +264,4 @@ fun score (f : Float32) =
         | Equal -> S.compare (snd a) (snd b)
         | o -> o)
       scored
-  in
-  V.map snd (V.take ordered n)
+  in V.map snd (V.take ordered n)

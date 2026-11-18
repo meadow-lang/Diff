@@ -109,16 +109,14 @@ fun upperSeqRatio len1 len2 =
   let n = len1 + len2 in
   if n == 0 then toFloat32 1.0
   else
-    toFloat32 2.0
-      *. toFloat32 (toFloat (if len1 < len2 then len1 else len2))
-      /. toFloat32 (toFloat n)
+    toFloat32 2.0 * toFloat32 (toFloat (if len1 < len2 then len1 else len2)) / toFloat32 (toFloat n)
 
 -- The inline changes of `op`, splitting lines into words with `tokenize`.
 @pub fun inlineChangesWith tokenize (d : TextDiff) op =
   match asTagTuple op with
   | (DiffTag.Replace, (oa, ob), (na, nb)) ->
       let fallback = V.map plain (changesOf op d.old d.new) in
-      if upperSeqRatio (ob - oa) (nb - na) <. minRatio then fallback
+      if upperSeqRatio (ob - oa) (nb - na) < minRatio then fallback
       else
         let oldSlices = arraySlice d.old oa ob in
         let newSlices = arraySlice d.new na nb in
@@ -136,7 +134,7 @@ fun upperSeqRatio len1 len2 =
             (arrayLen oldSeqs)
             0
             (arrayLen newSeqs)
-        in if getDiffRatio ops (arrayLen oldSeqs) (arrayLen newSeqs) <. minRatio then fallback
+        in if getDiffRatio ops (arrayLen oldSeqs) (arrayLen newSeqs) < minRatio then fallback
            else
              let add =
                \values slices emphasized ->

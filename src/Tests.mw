@@ -95,7 +95,7 @@ fun indexText m = match m with | Just i -> "${i}" | None -> "_"
 fun boolText b = if b then "true" else "false"
 
 @cfg(test)
-fun ratioText (r : Float32) = floor (toFloat64 r *. 4294967296.0)
+fun ratioText (r : Float32) = floor (toFloat64 r * 4294967296.0)
 
 @cfg(test)
 fun digitsText (xs : #[Int]) =
@@ -217,7 +217,7 @@ fun closeMatchCase i =
   let n = num cases (snd possibilities) 1 in
   let cutoff = num cases (snd n) 2 in
   let expected = strs cases (snd cutoff) in
-  let c = toFloat32 (toFloat (fst cutoff) /. 10.0) in
+  let c = toFloat32 (toFloat (fst cutoff) / 10.0) in
   let got = getCloseMatches (fst word) (fst possibilities) (fst n) c in
   (fst word, fst expected, got, snd expected)
 

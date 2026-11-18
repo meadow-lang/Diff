@@ -474,7 +474,7 @@ fun cleanupPass same tag ops =
   in
   let total = oldLen + newLen in
   if total == 0 then toFloat32 1.0
-  else toFloat32 2.0 *. toFloat32 (toFloat matches) /. toFloat32 (toFloat total)
+  else toFloat32 2.0 * toFloat32 (toFloat matches) / toFloat32 (toFloat total)
 
 fun saturatingSub a b = if a > b then a - b else 0
 

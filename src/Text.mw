@@ -207,9 +207,7 @@ fun upperSeqRatio len1 len2 =
   let n = len1 + len2 in
   if n == 0 then toFloat32 1.0
   else
-    toFloat32 2.0
-      *. toFloat32 (toFloat (if len1 < len2 then len1 else len2))
-      /. toFloat32 (toFloat n)
+    toFloat32 2.0 * toFloat32 (toFloat (if len1 < len2 then len1 else len2)) / toFloat32 (toFloat n)
 
 -- The crate's `QuickSeqRatio`: note that it counts `seq1`'s distinct tokens,
 -- not all of them.
@@ -227,12 +225,12 @@ fun quickRatio counts (seq : #[String]) =
               | None -> H.getOr 0 word counts
             in (H.insert word (x - 1) available, if x > 0 then matches + 1 else matches)
     in match V.foldl step (H.empty, 0) (V.fromArray seq) with
-       | (_, matches) -> toFloat32 2.0 *. toFloat32 (toFloat matches) /. toFloat32 (toFloat n)
+       | (_, matches) -> toFloat32 2.0 * toFloat32 (toFloat matches) / toFloat32 (toFloat n)
 
 -- `f`'s value as the crate turns a ratio into a `u32`: times 2^32 in single
 -- precision, then cut to 32 bits.
 fun score (f : Float32) =
-  let scaled = toFloat64 (f *. toFloat32 4294967296.0) in
+  let scaled = toFloat64 (f * toFloat32 4294967296.0) in
   let n = floor scaled in
   if n > 4294967295 then 4294967295 else if n < 0 then 0 else n
 
@@ -247,11 +245,11 @@ fun score (f : Float32) =
     V.foldl
       (\acc possibility ->
         let seq2 = V.toArray (tokenizeChars possibility) in
-        if upperSeqRatio (arrayLen seq1) (arrayLen seq2) <. cutoff
-          or quickRatio counts seq2 <. cutoff then acc
+        if upperSeqRatio (arrayLen seq1) (arrayLen seq2) < cutoff
+          or quickRatio counts seq2 < cutoff then acc
         else
           let r = ratio (fromSlices seq1 seq2) in
-          if r >=. cutoff then V.pushBack acc (score r, possibility) else acc)
+          if r >= cutoff then V.pushBack acc (score r, possibility) else acc)
       V.empty
       possibilities
   in
